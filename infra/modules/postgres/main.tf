@@ -1,3 +1,12 @@
+locals {
+  # On fusionne les tags communs (venus du root) avec des tags calculés ici
+  tags = merge(var.common_tags, {
+    environment = var.environment
+    managed_by  = "terraform"
+    module      = "postgres"
+  })
+}
+
 terraform {
   required_providers {
     docker = { source = "kreuzwerker/docker", version = "~> 3.0" }
@@ -22,5 +31,12 @@ resource "docker_container" "db" {
   ports {
     internal = 5432
     external = var.db_port
+  }
+  dynamic "labels" {
+    for_each = local.tags
+    content {
+      label = labels.key
+      value = labels.value
+    }
   }
 }
